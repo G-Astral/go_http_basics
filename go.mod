@@ -1,3 +1,3 @@
-module GO_DEV_TOUR
+module go-http-basics
 
 go 1.24.2
