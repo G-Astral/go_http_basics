@@ -5,16 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"go-http-basics/models"
 )
 
-type User struct {
-	ID		int		`json:"id"`
-	Name	string	`json:"name"`
-	Age		int		`json:"age"`
-}
+
 
 var (
-	users 	[]User
+	users 	[]models.User
 	nextID 	int = 1
 )
 
@@ -25,7 +22,7 @@ func createUserHandler(w http.ResponseWriter, r * http.Request)  {
 		return
 	}
 
-	var user User
+	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Ошибка чтения JSON", http.StatusBadRequest)
