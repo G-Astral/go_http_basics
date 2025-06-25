@@ -58,10 +58,32 @@ func saveToFile() error {
 	return json.NewEncoder(file).Encode(users)
 }
 
+func loadFromFile() error {
+	file, err := os.Open("users.json")
+	
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	defer file.Close()
+	
+	err = json.NewDecoder(file).Decode(&users)
+	fmt.Printf("Загружено пользователей: %d\n", len(users))
+	fmt.Println("Результат декодирования:", users)
+	return err
+}
+
 func main()  {
+	err := loadFromFile()
+	if err != nil {
+		fmt.Println("Ошибка загрузки users.json:", err)
+	}
+
 	http.HandleFunc("/user", createUserHandler)
 	fmt.Println("Сервер запущен на http://localhost:8080")
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println("Ошибка запуска сервера:", err)
 	}
