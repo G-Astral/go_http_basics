@@ -130,6 +130,44 @@ func getUserByIdHandler(w http.ResponseWriter, r *http.Request)  {
 	http.Error(w, "Пользователь не найден", http.StatusNotFound)
 }
 
+func deleteUserHandler(w http.ResponseWriter, r *http.Request)  {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	index := -1
+	for i, user := range users {
+		if user.ID == id {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		http.Error(w, "Пользователь не найден", http.StatusNotFound)
+		return
+	}
+
+	users = append(users[:index], users[index + 1:]...)
+
+	err = saveToFile()
+	if err != nil {
+		http.Error(w, "Ошибка сохранения файла", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Println("Пользователь удален")
+}
+
 func main()  {
 	err := loadFromFile()
 	if err != nil {
@@ -147,7 +185,16 @@ func main()  {
 		}
 	})
 
-	http.HandleFunc("/users/", getUserByIdHandler)
+	http.HandleFunc("/users/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			getUserByIdHandler(w, r)
+		case http.MethodDelete:
+			deleteUserHandler(w, r)
+		default:
+			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		}
+	})
 
 	fmt.Println("Сервер запущен на http://localhost:8080")
 	err = http.ListenAndServe(":8080", nil)
