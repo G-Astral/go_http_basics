@@ -15,6 +15,11 @@ type User struct {
 	Age		int		`json:"age"`
 }
 
+type UpdateUserInput struct {
+	Name	*string	`json:"name"`
+	Age		*int	`json:"age"`
+}
+
 var (
 	users 	[]User
 	nextID 	int = 1
@@ -168,6 +173,59 @@ func deleteUserHandler(w http.ResponseWriter, r *http.Request)  {
 	fmt.Println("Пользователь удален")
 }
 
+func patchUserHandler(w http.ResponseWriter, r *http.Request)  {
+	if r.Method != http.MethodPatch {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	var input UpdateUserInput
+	err = json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, "Неверный JSON", http.StatusBadRequest)
+		return
+	}
+
+	if input.Name == nil && input.Age == nil {
+		http.Error(w, "Нет данных для обновления", http.StatusBadRequest)
+		return
+	}
+
+	found := false
+	for i, user := range users {
+		if user.ID == id {
+			if input.Name != nil {
+				users[i].Name = *input.Name
+			}
+			if input.Age != nil {
+				users[i].Age = *input.Age
+			}
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		http.Error(w, "Пользователь не найден", http.StatusBadRequest)
+		return
+	}
+
+	err = saveToFile()
+	if err != nil {
+		http.Error(w, "Ошибка при сохранении", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "Пользователь обновлён")
+}
+
 func main()  {
 	err := loadFromFile()
 	if err != nil {
@@ -191,6 +249,8 @@ func main()  {
 			getUserByIdHandler(w, r)
 		case http.MethodDelete:
 			deleteUserHandler(w, r)
+		case http.MethodPatch:
+			patchUserHandler(w, r)
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
