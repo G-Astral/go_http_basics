@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type User struct {
@@ -104,13 +106,37 @@ func loadFromFile() error {
 	return err
 }
 
+func getUserByIdHandler(w http.ResponseWriter, r *http.Request)  {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	for _, user := range users {
+		if user.ID == id {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(user)
+			return
+		}
+	}
+
+	http.Error(w, "Пользователь не найден", http.StatusNotFound)
+}
+
 func main()  {
 	err := loadFromFile()
 	if err != nil {
 		fmt.Println("Ошибка загрузки users.json:", err)
 	}
 
-	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			createUserHandler(w, r)
@@ -120,6 +146,8 @@ func main()  {
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
 	})
+
+	http.HandleFunc("/users/", getUserByIdHandler)
 
 	fmt.Println("Сервер запущен на http://localhost:8080")
 	err = http.ListenAndServe(":8080", nil)
