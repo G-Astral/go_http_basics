@@ -32,6 +32,16 @@ func createUserHandler(w http.ResponseWriter, r * http.Request)  {
 		return
 	}
 
+	if user.Name == "" {
+		http.Error(w, "Имя не может быть пустым", http.StatusBadRequest)
+		return
+	}
+
+	if user.Age <= 0 {
+		http.Error(w, "Возраст должен быть положительным числом", http.StatusBadRequest)
+		return
+	}
+
 	user.ID = nextID
 	nextID++
 	users = append(users, user)
@@ -45,6 +55,16 @@ func createUserHandler(w http.ResponseWriter, r * http.Request)  {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
+}
+
+func getUsersHandler(w http.ResponseWriter, r *http.Request)  {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
 
 func saveToFile() error {
@@ -70,6 +90,15 @@ func loadFromFile() error {
 	defer file.Close()
 	
 	err = json.NewDecoder(file).Decode(&users)
+
+	maxID := 0
+	for _, user := range users {
+		if user.ID > maxID {
+			maxID = user.ID
+		}
+	}
+	nextID = maxID + 1
+
 	fmt.Printf("Загружено пользователей: %d\n", len(users))
 	fmt.Println("Результат декодирования:", users)
 	return err
@@ -81,7 +110,17 @@ func main()  {
 		fmt.Println("Ошибка загрузки users.json:", err)
 	}
 
-	http.HandleFunc("/user", createUserHandler)
+	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			createUserHandler(w, r)
+		case http.MethodGet:
+			getUsersHandler(w, r)
+		default:
+			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		}
+	})
+
 	fmt.Println("Сервер запущен на http://localhost:8080")
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
