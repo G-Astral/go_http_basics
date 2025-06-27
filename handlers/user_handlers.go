@@ -8,7 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"go-http-basics/db"
 	"go-http-basics/models"
+	"go-http-basics/storage"
 )
 
 var (
@@ -215,4 +217,21 @@ func LoadFromFile() error {
 	fmt.Printf("Загружено пользователей: %d\n", len(users))
 	fmt.Println("Результат декодирования:", users)
 	return err
+}
+
+func UsersDbHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	users, err := storage.GetAllUsersFromDB(db.DB)
+	if err != nil {
+		// http.Error(w, "Ошибка чтения из БД", http.StatusInternalServerError)
+		http.Error(w, "Ошибка чтения из БД: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&users)
 }

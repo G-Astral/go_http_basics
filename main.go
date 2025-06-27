@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go-http-basics/db"
 	"go-http-basics/handlers"
 	"go-http-basics/routes"
 )
@@ -14,8 +15,11 @@ func main() {
 		fmt.Println("Ошибка загрузки users.json:", err)
 	}
 
+	db.InitDB()
+
 	http.HandleFunc("/users", routes.RouteUsers)
 	http.HandleFunc("/users/", routes.RouteUsersID)
+	http.HandleFunc("/usersDB", routes.RouteUsersDB)
 
 	fmt.Println("Сервер запущен на http://localhost:8080")
 	err = http.ListenAndServe(":8080", nil)
