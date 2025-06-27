@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -227,11 +228,45 @@ func UsersDbHandler(w http.ResponseWriter, r *http.Request) {
 
 	users, err := storage.GetAllUsersFromDB(db.DB)
 	if err != nil {
-		// http.Error(w, "Ошибка чтения из БД", http.StatusInternalServerError)
 		http.Error(w, "Ошибка чтения из БД: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&users)
+}
+
+func UserDbCreateHandler(w http.ResponseWriter, r *http.Request)  {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var user models.User
+
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, "Ошибка чтения JSON", http.StatusBadRequest)
+		return
+	}
+
+	if user.Name == "" {
+		http.Error(w, "Имя не может быть пустым", http.StatusBadRequest)
+		return
+	}
+
+	if user.Age <= 0 {
+		http.Error(w, "Возраст должен быть положительным числом", http.StatusBadRequest)
+		return
+	}
+
+	err = storage.InsertUserToDb(db.DB, &user)
+	if err != nil {
+		log.Println("Ошибка при вставке в БД:", err)
+		http.Error(w, "Ошибка записи в базу данных", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
 }
