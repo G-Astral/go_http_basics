@@ -3,32 +3,10 @@ package main
 import (
 	"fmt"
 	"net/http"
+
 	"go-http-basics/handlers"
+	"go-http-basics/routes"
 )
-
-func routeUsers(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		handlers.CreateUserHandler(w, r)
-	case http.MethodGet:
-		handlers.GetUsersHandler(w, r)
-	default:
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-	}
-}
-
-func routeUsersID(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		handlers.GetUserByIdHandler(w, r)
-	case http.MethodDelete:
-		handlers.DeleteUserHandler(w, r)
-	case http.MethodPatch:
-		handlers.PatchUserHandler(w, r)
-	default:
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-	}
-}
 
 func main() {
 	err := handlers.LoadFromFile()
@@ -36,9 +14,8 @@ func main() {
 		fmt.Println("Ошибка загрузки users.json:", err)
 	}
 
-	http.HandleFunc("/users", routeUsers)
-
-	http.HandleFunc("/users/", routeUsersID)
+	http.HandleFunc("/users", routes.RouteUsers)
+	http.HandleFunc("/users/", routes.RouteUsersID)
 
 	fmt.Println("Сервер запущен на http://localhost:8080")
 	err = http.ListenAndServe(":8080", nil)
