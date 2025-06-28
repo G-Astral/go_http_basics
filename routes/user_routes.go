@@ -44,6 +44,8 @@ func RouteUsersIDDB(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodDelete:
 		handlers.UserDbDeleteHandler(w, r)
+	case http.MethodPatch:
+		handlers.UserDbPatchHandler(w, r)
 	default:
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 	}

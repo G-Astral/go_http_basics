@@ -2,7 +2,9 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 	"go-http-basics/models"
+	"strings"
 )
 
 func GetAllUsersFromDB(db *sql.DB) ([]models.User, error) {
@@ -38,6 +40,41 @@ func DeleteUserFromBd(db *sql.DB, id int) (bool, error) {
 		return false, err
 	}
 
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
+}
+
+func UpdateUserInDb(db *sql.DB, id int, input models.UpdateUserInput) (bool, error) {
+	parts := []string{}
+	args := []interface{}{}
+	i := 1
+
+	if input.Name != nil {
+		parts = append(parts, fmt.Sprintf("name = $%d", i))
+		args = append(args, *input.Name)
+		i++
+	}
+
+	if input.Age != nil {
+		parts = append(parts, fmt.Sprintf("age = $%d", i))
+		args = append(args, *input.Age)
+		i++
+	}
+
+	if len(parts) == 0 {
+		return false, nil
+	}
+
+	query := fmt.Sprintf("UPDATE users SET %s WHERE id = $%d", strings.Join(parts, ", "), i)
+	args = append(args, id)
+	res, err := db.Exec(query, args...)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return false, err

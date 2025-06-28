@@ -133,6 +133,7 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 func PatchUserHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
 	}
 
 	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
@@ -297,4 +298,39 @@ func UserDbDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "Пользователь удален")
 	}
+}
+
+func UserDbPatchHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/usersDB/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	var input models.UpdateUserInput
+	err = json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, "Неверный JSON", http.StatusBadRequest)
+		return
+	}
+
+	flag, err := storage.UpdateUserInDb(db.DB, id, input)
+	if err != nil {
+		http.Error(w, "Ошибка в обновлении базы данных", http.StatusInternalServerError)
+		return
+	}
+
+	if !flag {
+		http.Error(w, "Нет данных для обновления", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Пользователь изменен")
 }
