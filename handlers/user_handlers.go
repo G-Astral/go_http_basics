@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	users []models.User
+	users  []models.User
 	nextID = 1
 )
 
@@ -47,7 +47,7 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	nextID++
 	users = append(users, user)
 
-	fmt.Println("Сохраняем пользователей в файл...")
+	// fmt.Println("Сохраняем пользователей в файл...")
 	err = SaveToFile()
 	if err != nil {
 		http.Error(w, "Ошибка записи в файл", http.StatusInternalServerError)
@@ -185,7 +185,7 @@ func PatchUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func SaveToFile() error {
 	file, err := os.Create("users.json")
-	fmt.Println("Файл успешно открыт для записи")
+	// fmt.Println("Файл успешно открыт для записи")
 	if err != nil {
 		return err
 	}
@@ -215,8 +215,8 @@ func LoadFromFile() error {
 	}
 	nextID = maxID + 1
 
-	fmt.Printf("Загружено пользователей: %d\n", len(users))
-	fmt.Println("Результат декодирования:", users)
+	// fmt.Printf("Загружено пользователей: %d\n", len(users))
+	// fmt.Println("Результат декодирования:", users)
 	return err
 }
 
@@ -236,7 +236,7 @@ func UsersDbHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&users)
 }
 
-func UserDbCreateHandler(w http.ResponseWriter, r *http.Request)  {
+func UserDbCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		return
@@ -269,4 +269,32 @@ func UserDbCreateHandler(w http.ResponseWriter, r *http.Request)  {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
+}
+
+func UserDbDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/usersDB/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный ID", http.StatusBadRequest)
+		return
+	}
+
+	flag, err := storage.DeleteUserFromBd(db.DB, id)
+	if err != nil {
+		http.Error(w, "Ошибка удаления из базы данных", http.StatusInternalServerError)
+		return
+	}
+
+	if !flag {
+		http.Error(w, "Пользователь не найден", http.StatusNotFound)
+		return
+	} else {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "Пользователь удален")
+	}
 }

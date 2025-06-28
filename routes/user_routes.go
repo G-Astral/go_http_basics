@@ -29,12 +29,21 @@ func RouteUsersID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func RouteUsersDB(w http.ResponseWriter, r *http.Request)  {
+func RouteUsersDB(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		handlers.UsersDbHandler(w, r)
 	case http.MethodPost:
-		handlers.UserDbCreateHandler(w ,r)
+		handlers.UserDbCreateHandler(w, r)
+	default:
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+	}
+}
+
+func RouteUsersIDDB(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodDelete:
+		handlers.UserDbDeleteHandler(w, r)
 	default:
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 	}

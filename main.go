@@ -20,6 +20,7 @@ func main() {
 	http.HandleFunc("/users", routes.RouteUsers)
 	http.HandleFunc("/users/", routes.RouteUsersID)
 	http.HandleFunc("/usersDB", routes.RouteUsersDB)
+	http.HandleFunc("/usersDB/", routes.RouteUsersIDDB)
 
 	fmt.Println("Сервер запущен на http://localhost:8080")
 	err = http.ListenAndServe(":8080", nil)
